@@ -1,3 +1,10 @@
+/**
+ * @file		ConvImage.cpp
+ * @brief	Convolution
+ * @author	Um6r41
+ * @date 2017/1/31
+ */
+
 #include "ConvImage.h"
 #include <vector>
 
