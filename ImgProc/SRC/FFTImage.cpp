@@ -161,7 +161,6 @@ struct ComplexImage {
 		dx = (width - src.width) / 2, dy = (height - src.height) / 2;
 		REP(y, src.height) REP(x, src.width)
 			buf[width * (y+dy) + x+dx] = Complex(src.buf[src.width * y + x].c[channel] * scale, 0);
-		FFTShift();
 	}
 	void	GetImage(Image &dst, int channel) {
 		REP(y, dst.height) REP(x, dst.width)
@@ -174,7 +173,7 @@ struct ComplexImage {
 
 		// Padding
 		RREP(y, dy, src.height + dy) {
-			REP(x, 0, dx)							buf[width * y + x]	= buf[width * y + (0 + dx)];
+			REP(x, dx)							buf[width * y + x]	= buf[width * y + (0 + dx)];
 			RREP(x, src.width + dx, width)	buf[width * y + x]	= buf[width * y + (src.width - 1 + dx)];
 		}
 		REP(x, width) {
@@ -183,7 +182,6 @@ struct ComplexImage {
 		}
 	}
 	void	GetImageLog(Image &dst, int channel, int factor) {
-		//FFTShift();
 		REP(y, dst.height) REP(x, dst.width)
 			dst.buf[dst.width * y + x].c[channel] = (BYTE)(::log(buf[width * (y+dy) + x+dx].x) * 255.0 / factor);
 	}
@@ -191,7 +189,6 @@ struct ComplexImage {
 		std::vector<double>	mag(dst.height * dst.width);
 		double max	= 0.0;
 		REP(y, dst.height) REP(x, dst.width) {
-			//double norm2	= buf[width * y + x].Abs2();
 			double norm2	= buf[width * (y+dy) + x+dx].Abs2();
 			double m = mag[dst.width * y + x] = (norm2 >= 1.0) ? ::log10(norm2) / 2.0 : 0;
 			if(max < m)	max = m;
@@ -243,6 +240,7 @@ void	ImgProc::FFTConvImage(Image &img, Image &ker) {
 		ciImg.SetImageLog(img, k, factor);
 		ciKer.Zero();
 		ciKer.SetImage(ker, k, 1 / (double)kerSum);
+		ciKer.FFTShift();
 		ciImg.FFT(FFT);
 		ciKer.FFT(FFT);
 		ciImg *= ciKer;
@@ -250,9 +248,3 @@ void	ImgProc::FFTConvImage(Image &img, Image &ker) {
 		ciImg.GetImageLog(img, k, factor);
 	}
 }
-		/* Padding Image
-		RREP(y, 0, img.height) RREP(x, img.width, fftWidth)
-			dstImg[fftWidth * y + x]	= dstImg[img.width * y + (img.width - 1)];
-		RREP(y, img.height, fftHeight) REP(x, fftWidth)
-			dstImg[fftWidth * y + x]	= dstImg[fftWidth * (img.height - 1) + x];
-		*/

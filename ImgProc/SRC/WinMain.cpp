@@ -7,7 +7,6 @@
 #include "BmpUtil.h"
 
 #include "FFTImage.h"
-#include "LensBlur.h"
 #include "Effect3D.h"
 #include "Laplacian.h"
 #include "GaussBlur.h"
@@ -48,10 +47,10 @@ int main(int argc, char *argv[]) {
 		//ImgProc::LensBlur(bmp2.Buff(), bmp1.Buff(), bmp1.Width(), bmp1.Height(), 0);
 		//ImgProc::GaussBlur(bmp2.Image(), param);
 		//ImgProc::Laplacian(bmp2.Image());
-		ImgProc::Posterization(bmp2.Image(), param);
+		//ImgProc::Posterization(bmp2.Image(), param);
 		//ImgProc::Effect3D(bmp2.Image(), param);
 		//ImgProc::ConvImage(&bmp2.Image(), &bmp1.Image(), &kernel.Image());
-		//ImgProc::FFTConvImage(bmp2.Image(), kernel.Image());
+		ImgProc::FFTConvImage(bmp2.Image(), kernel.Image());
 		//ImgProc::Rot(bmp2.Image(), center, 3.14 / 3);
 	}
 	::puts("Done");
