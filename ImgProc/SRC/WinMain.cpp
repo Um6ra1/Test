@@ -14,32 +14,23 @@
 #include "Rot.h"
 #include "Posterization.h"
 
-int main(int argc, char *argv[]) {
-	std::string	saveFileName("a.bmp");
+int main(int args, char *ppArgs[]) {
 	CBitmap bmp1, bmp2, kernel;
 
-	if(argc < 1) {
-		::printf("a.exe <src> <dst>\n");
-		return(0);
+	if(args < 4) {
+		::printf("a.exe <src> <kernel> <param>\n");
+		return EXIT_SUCCESS;
 	}
 
-	if(!bmp1.Load(argv[1])) {
-		::printf("failed\n");
-		return(1);	
+	if( !bmp1.Load(ppArgs[1]) || !kernel.Load(ppArgs[2]) ) {
+		::printf("Load image failed\n");
+		return EXIT_FAILURE;	
 	}
 	
 	bmp2	= bmp1;
 	
-	int param;
-	std::string	kernelImageFileName;
+	int param = ::atoi(ppArgs[3]);
 
-	::printf("Param:\n");
-	std::cin >> param;
-	::printf("KernelImage:\n");
-	std::cin >> kernelImageFileName;
-
-	if (!kernel.Load(kernelImageFileName.c_str()))	::printf("Failed to load Kernel.\n");
-	
 	::puts("Start");
 	if(param == 9979)	ImgProc::FFTMagnitudeImage(bmp2.Image());
 	else {
@@ -55,6 +46,5 @@ int main(int argc, char *argv[]) {
 	}
 	::puts("Done");
 	bmp1.Save("a_org.bmp");
-	bmp2.Save(saveFileName.c_str());
-	return(0);
+	bmp2.Save("a.bmp");
 }

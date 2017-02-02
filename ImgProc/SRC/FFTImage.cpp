@@ -219,11 +219,12 @@ struct ComplexImage {
 
 void ImgProc::FFTMagnitudeImage(Image &img) {
 	ComplexImage	ciImg(NEXT_POW2(img.width), NEXT_POW2(img.height));
-	REP(k, 3) {
-	ciImg.Zero();
-		ciImg.SetImage(img, k, 1);
+	REP(c, 3) {
+		ciImg.Zero();
+		ciImg.SetImage(img, c, 1);
 		ciImg.FFT(FFT);
-		ciImg.GetImageMagnitude(img, k);
+		ciImg.FFTShift();
+		ciImg.GetImageMagnitude(img, c);
 	}
 }
 
@@ -232,19 +233,19 @@ void	ImgProc::FFTConvImage(Image &img, Image &ker) {
 	ComplexImage	ciKer(NEXT_POW2(img.width), NEXT_POW2(img.height));
 	double factor	= 1;
 
-	REP(k, 3) {
+	REP(c, 3) {
 		UINT	kerSum = 0;
 		
-		REP(i, ker.height * ker.width)	kerSum += ker.buf[i].c[k];
+		REP(i, ker.height * ker.width)	kerSum += ker.buf[i].c[c];
 		ciImg.Zero();
-		ciImg.SetImageLog(img, k, factor);
+		ciImg.SetImageLog(img, c, factor);
 		ciKer.Zero();
-		ciKer.SetImage(ker, k, 1 / (double)kerSum);
+		ciKer.SetImage(ker, c, 1 / (double)kerSum);
 		ciKer.FFTShift();
 		ciImg.FFT(FFT);
 		ciKer.FFT(FFT);
 		ciImg *= ciKer;
 		ciImg.FFT(IFFT);
-		ciImg.GetImageLog(img, k, factor);
+		ciImg.GetImageLog(img, c, factor);
 	}
 }
