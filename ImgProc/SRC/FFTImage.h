@@ -2,7 +2,7 @@
  * @file		FFTImage.h
  * @brief	FFT for image processing
  * @author	Um6r41
- * @date 2017/1/31
+ * @date 2018/3/05
  */
  
 #pragma once

@@ -2,7 +2,7 @@
  * @file		FFTImage.cpp
  * @brief	FFT for image processing
  * @author	Um6r41
- * @date 2017/1/31
+ * @date 2018/3/05
  */
 
 #include "FFTImage.h"
@@ -11,8 +11,6 @@
 
 #include <cstdio>
 #include <vector>
-
-#define NORM255(x, max)	((UINT)((x) * 255.0 / (max)))
 
 using namespace ImgProc;
 
@@ -45,10 +43,10 @@ struct Complex {
 };
 
 typedef enum {
-	FFT, IFFT
-} FFTDir;
+	TdForward, TdBackward
+} TransDir;
 
-void FFT1D(Complex *pDat, int log2n, FFTDir dir) {
+void FFT1D(Complex *pDat, int log2n, TransDir dir) {
 	int length = 1 << log2n;
 	
 	// Bit reversal
@@ -66,7 +64,7 @@ void FFT1D(Complex *pDat, int log2n, FFTDir dir) {
 		int l1	= l2;
 		l2	<<= 1;
 		Complex u(1, 0);
-		for(int i = 0; i < l1; i ++) {
+		REP(i, l1) {
 			for(int j = i; j < length; j += l2) {
 				int	idx		= j + l1;
 				Complex	t	= u * pDat[idx];
@@ -76,20 +74,16 @@ void FFT1D(Complex *pDat, int log2n, FFTDir dir) {
 			u *= w;
 		}
 		w.HalfAngOfUnitary();
-		if(dir == IFFT)	w.y *= -1;
+		if(dir == TdBackward)	w.y *= -1;
 	}
-/*
-	double n = 1.0 / ::sqrt(length);
-	REP(i, length)	pDat[i] *= n;
-	return;
-	*/
-	if (dir == IFFT) {
+
+	if (dir == TdBackward) {
 		double n = 1.0 / (double)length;
 		REP(i, length)	pDat[i] *= n;
 	}
 }
 
-void Fft1D(Complex *pDst, Complex *pSrc, int log2n, FFTDir dir) {
+void Fft1D(Complex *pDst, Complex *pSrc, int log2n, TransDir dir) {
 	int length = 1 << log2n;
 	
 	// Bit reversal
@@ -123,16 +117,16 @@ void Fft1D(Complex *pDst, Complex *pSrc, int log2n, FFTDir dir) {
 			u	= u * w;
 		}
 		w.HalfAngOfUnitary();
-		if(dir == IFFT)	w.y *= -1;
+		if(dir == TdBackward)	w.y *= -1;
 	}
 
-	if (dir == IFFT) {
+	if (dir == TdBackward) {
 		double n = 1.0 / (double)length;
 		REP(i, length)	pDst[i] *= n;
 	}
 }
 
-void FFT2D(Complex *pDat, int width, int height, FFTDir dir) {
+void FFT2D(Complex *pDat, int width, int height, TransDir dir) {
 	std::vector<Complex>	t1(width + height);
 
 	// Row FFT
@@ -148,9 +142,7 @@ void FFT2D(Complex *pDat, int width, int height, FFTDir dir) {
 	}
 }
 
-void	Spectrum2MagnitudeImage(UINT32 *pDst, Complex *pSrc, int width, int height);
-
-#define NEXT_POW2(x)	( 1 << (int)(::ceil(::log2((double)(x)))) )
+void	Spectrum2MagnitudeImage(u32 *pDst, Complex *pSrc, int width, int height);
 
 struct ComplexImage {
 	int	width, height;
@@ -164,7 +156,7 @@ struct ComplexImage {
 	}
 	void	GetImage(Image &dst, int channel) {
 		REP(y, dst.height) REP(x, dst.width)
-			dst.buf[dst.width * y + x].c[channel] = (BYTE)buf[width * (y+dy) + x+dx].x;
+			dst.buf[dst.width * y + x].c[channel] = (u8)buf[width * (y+dy) + x+dx].x;
 	}
 	void	SetImageLog(Image &src, int channel, double factor) {
 		dx = (width - src.width) / 2, dy = (height - src.height) / 2;
@@ -183,7 +175,7 @@ struct ComplexImage {
 	}
 	void	GetImageLog(Image &dst, int channel, int factor) {
 		REP(y, dst.height) REP(x, dst.width)
-			dst.buf[dst.width * y + x].c[channel] = (BYTE)(::log(buf[width * (y+dy) + x+dx].x) * 255.0 / factor);
+			dst.buf[dst.width * y + x].c[channel] = (u8)(::log(buf[width * (y+dy) + x+dx].x) * 255.0 / factor);
 	}
 	void	GetImageMagnitude(Image &dst, int channel) {
 		std::vector<double>	mag(dst.height * dst.width);
@@ -197,9 +189,9 @@ struct ComplexImage {
 		REP(y, dst.height) REP(x, dst.width)	dst.buf[dst.width * y + x].c[channel] = NORM255(mag[dst.width * y + x], max);
 	}
 	
-	void	Zero() {	::memset(&buf[0], 0, buf.size() * sizeof(Complex));	}
-	void	FFT(FFTDir dir) {	::FFT2D(&buf[0], width, height, dir);	}
-	void	FFTShift() {
+	void Zero() {	::memset(&buf[0], 0, buf.size() * sizeof(Complex));	}
+	void FFT(TransDir dir) {	::FFT2D(&buf[0], width, height, dir);	}
+	void FFTShift() {
 		REV(y, height / 2) REV(x, width / 2) {
 			int	idx = width * y + x;
 			std::swap(buf[idx], buf[idx + (height + 1) * width / 2]);
@@ -208,7 +200,7 @@ struct ComplexImage {
 	}
 	
 	ComplexImage &operator *=(ComplexImage &o) {
-		REP(y, height) REP(x, width)	buf[width * y + x] *= o.buf[o.width * y + x];
+		REP(y, height) REP(x, width) buf[width * y + x] *= o.buf[o.width * y + x];
 		return *this;
 	}
 	
@@ -218,23 +210,23 @@ struct ComplexImage {
 };
 
 void ImgProc::FFTMagnitudeImage(Image &img) {
-	ComplexImage	ciImg(NEXT_POW2(img.width), NEXT_POW2(img.height));
+	ComplexImage ciImg(NEXT_POW2(img.width), NEXT_POW2(img.height));
 	REP(c, 3) {
 		ciImg.Zero();
 		ciImg.SetImage(img, c, 1);
-		ciImg.FFT(FFT);
+		ciImg.FFT(TdForward);
 		ciImg.FFTShift();
 		ciImg.GetImageMagnitude(img, c);
 	}
 }
 
-void	ImgProc::FFTConvImage(Image &img, Image &ker) {
-	ComplexImage	ciImg(NEXT_POW2(img.width), NEXT_POW2(img.height));
-	ComplexImage	ciKer(NEXT_POW2(img.width), NEXT_POW2(img.height));
-	double factor	= 1;
+void ImgProc::FFTConvImage(Image &img, Image &ker) {
+	ComplexImage ciImg(NEXT_POW2(img.width), NEXT_POW2(img.height));
+	ComplexImage ciKer(NEXT_POW2(img.width), NEXT_POW2(img.height));
+	double factor = 1;
 
 	REP(c, 3) {
-		UINT	kerSum = 0;
+		u32 kerSum = 0;
 		
 		REP(i, ker.height * ker.width)	kerSum += ker.buf[i].c[c];
 		ciImg.Zero();
@@ -242,10 +234,10 @@ void	ImgProc::FFTConvImage(Image &img, Image &ker) {
 		ciKer.Zero();
 		ciKer.SetImage(ker, c, 1 / (double)kerSum);
 		ciKer.FFTShift();
-		ciImg.FFT(FFT);
-		ciKer.FFT(FFT);
+		ciImg.FFT(TdForward);
+		ciKer.FFT(TdForward);
 		ciImg *= ciKer;
-		ciImg.FFT(IFFT);
+		ciImg.FFT(TdBackward);
 		ciImg.GetImageLog(img, c, factor);
 	}
 }
