@@ -1,4 +1,4 @@
-OBJS = WinMain.obj BmpUtil.obj FFTImage.obj LensBlur.obj Effect3D.obj Laplacian.obj GaussBlur.obj ConvImage.obj Posterization.obj
+OBJS = WinMain.obj BmpUtil.obj FFTImage.obj FwhtImage.obj Laplacian.obj GaussBlur.obj ConvImage.obj 
 LIBS = 
 LNKFLAGS = 
 CFLAGS = /Ox
